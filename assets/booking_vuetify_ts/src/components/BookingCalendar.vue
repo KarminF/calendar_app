@@ -3,7 +3,7 @@
   <v-divider></v-divider>
 
   <v-dialog v-model="addEventDialog" width="auto">
-    <v-sheet class="mx-auto" width="300">
+    <v-sheet class="mx-auto" width="400">
       <v-card-title>
         <span class="headline">New Event</span>
       </v-card-title>
@@ -13,41 +13,119 @@
           v-model="currentEvent.desc"
           label="description"
         ></v-textarea>
-        <!-- <v-date-picker v-model="currentEvent.start" label="Start Date" required></v-date-picker>
-        <v-date-picker v-model="currentEvent.end" label="End Date" required></v-date-picker> -->
         <v-switch
           v-model="currentEvent.allDay"
           label="All Day Event?"
         ></v-switch>
         <v-btn class="mt-1" type="submit" block>Submit</v-btn>
-        <v-btn class="mt-1" @click="addEventDialog = false" block>Cancel</v-btn>
+        <v-btn
+          class="mt-1"
+          @click="
+            addEventDialog = false;
+            clearCurrentEvent();
+          "
+          block
+          >Cancel</v-btn
+        >
       </v-form>
     </v-sheet>
   </v-dialog>
 
-  <v-dialog v-model="editEventDialog" width="auto">
-    <v-sheet class="mx-auto" width="300">
+  <v-dialog v-model="eventDetailDialog" width="auto">
+    <v-sheet class="mx-auto" width="400">
       <v-card-title>
-        <span class="headline">Edit Event</span>
+        <span class="headline">Details</span>
       </v-card-title>
-      <v-form @submit.prevent="submitEditEvent">
-        <v-text-field v-model="currentEvent.title" label="title"></v-text-field>
+      <v-form>
+        <v-text-field
+          v-model="currentEvent.title"
+          label="title"
+          readonly
+        ></v-text-field>
         <v-textarea
           v-model="currentEvent.desc"
           label="description"
+          readonly
         ></v-textarea>
-        <!-- <v-date-picker v-model="currentEvent.start" label="Start Date" required></v-date-picker>
-        <v-date-picker v-model="currentEvent.end" label="End Date" required></v-date-picker> -->
-        <v-switch
-          v-model="currentEvent.allDay"
-          label="All Day Event?"
-        ></v-switch>
-        <v-btn class="mt-1" type="submit" block>Submit</v-btn>
-        <v-btn class="mt-1" @click="deleteEvent" block>Delete</v-btn>
-        <v-btn class="mt-1" @click="editEventDialog = false" block
+        <v-btn
+          class="mt-1"
+          @click="
+            editEventDialog = true;
+            eventDetailDialog = false;
+          "
+          block
+          >Edit</v-btn
+        >
+        <v-btn
+          class="mt-1"
+          @click="
+            deleteEvent();
+            eventDetailDialog = false;
+          "
+          block
+          >Delete</v-btn
+        >
+        <v-btn
+          class="mt-1"
+          @click="
+            eventDetailDialog = false;
+            clearCurrentEvent();
+          "
+          block
           >Cancel</v-btn
         >
       </v-form>
+    </v-sheet>
+  </v-dialog>
+
+  <v-dialog v-model="editEventDialog">
+    <v-sheet class="mx-auto" max-width="800">
+      <v-card width="785">
+        <v-card-title>
+          <span class="title-center">Edit Event</span>
+        </v-card-title>
+        <v-form @submit.prevent="submitEditEvent">
+          <v-row>
+            <v-col cols="6">
+              <v-text-field
+                v-model="currentEvent.title"
+                label="title"
+              ></v-text-field>
+              <v-textarea
+                v-model="currentEvent.desc"
+                label="description"
+              ></v-textarea>
+              <v-switch
+                v-model="currentEvent.allDay"
+                label="All Day Event?"
+              ></v-switch>
+              <v-btn class="mt-1" type="submit" block>Submit</v-btn>
+              <v-btn
+                class="mt-1"
+                @click="
+                  deleteEvent();
+                  editEventDialog = false;
+                "
+                block
+                >Delete</v-btn
+              >
+              <v-btn
+                class="mt-1"
+                @click="
+                  editEventDialog = false;
+                  clearCurrentEvent();
+                "
+                block
+                >Cancel</v-btn
+              >
+            </v-col>
+            <v-col cols="4">
+              <v-date-picker></v-date-picker>
+              <v-time-picker></v-time-picker>
+            </v-col>
+          </v-row>
+        </v-form>
+      </v-card>
     </v-sheet>
   </v-dialog>
 
@@ -66,6 +144,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { EventApi, EventInput } from "@fullcalendar/core";
+import { VTimePicker } from 'vuetify/labs/VTimePicker'
 
 interface CurrentEvent extends EventInput {
   desc?: string;
@@ -80,11 +159,13 @@ export default defineComponent({
   },
   components: {
     FullCalendar,
+    VTimePicker,
   },
   setup(props) {
     console.log("props", props);
     const addEventDialog = ref(false);
     const editEventDialog = ref(false);
+    const eventDetailDialog = ref(false);
     const fullCalendar = ref<InstanceType<typeof FullCalendar> | null>(null);
     const calendarApi = ref<ReturnType<
       InstanceType<typeof FullCalendar>["getApi"]
@@ -158,27 +239,34 @@ export default defineComponent({
     function submitEditEvent(): void {
       editEventDialog.value = false;
       if (calendarApi.value === null) return; // should not happen
-      const event = currentEvent.id ? calendarApi.value.getEventById(currentEvent.id) : null;
+      const event = currentEvent.id
+        ? calendarApi.value.getEventById(currentEvent.id)
+        : null;
       if (event) {
         event.setProp("title", currentEvent.title);
         event.setExtendedProp("description", currentEvent.desc);
         event.setAllDay(currentEvent.allDay ?? false);
         handleEventChange(event);
-      }else{
+      } else {
         console.error("submitEditEvent: event not found");
       }
     }
 
     function deleteEvent(): void {
       if (!confirm("Are you sure you want to delete this event?")) return;
-      editEventDialog.value = false;
-      if(calendarApi.value === null) return; // should not happen
-      const event = currentEvent.id ? calendarApi.value.getEventById(currentEvent.id) : null;
+      if (calendarApi.value === null) return; // should not happen
+      const event = currentEvent.id
+        ? calendarApi.value.getEventById(currentEvent.id)
+        : null;
       if (event) {
         event.remove();
-      }else{
+      } else {
         console.error("deleteEvent: event not found");
       }
+      clearCurrentEvent();
+    }
+
+    function clearCurrentEvent(): void {
       Object.assign(currentEvent, {
         title: "",
         desc: "",
@@ -203,7 +291,7 @@ export default defineComponent({
         end: clickInfo.event.end,
         allDay: clickInfo.event.allDay,
       });
-      editEventDialog.value = true;
+      eventDetailDialog.value = true;
     }
 
     function handleEventDrop(arg: { event: EventApi }): void {
@@ -234,28 +322,38 @@ export default defineComponent({
     }
 
     return {
-      ...toRefs(reactive({
-        fullCalendar,
-        deviceName: props.deviceName,
-        addEventDialog,
-        editEventDialog,
-        currentEvent,
-        currentEvents,
-        rules,
-        calendarOptions,
-        submitAddEvent,
-        submitEditEvent,
-        deleteEvent,
-        handleDateSelect,
-        handleEventClick,
-        handleEventDrop,
-        handleEventResize,
-        handleEvents,
-        handleEventAdd,
-        handleEventChange,
-        handleEventRemove,
-      })),
+      ...toRefs(
+        reactive({
+          fullCalendar,
+          deviceName: props.deviceName,
+          addEventDialog,
+          editEventDialog,
+          eventDetailDialog,
+          currentEvent,
+          currentEvents,
+          rules,
+          calendarOptions,
+          submitAddEvent,
+          submitEditEvent,
+          deleteEvent,
+          clearCurrentEvent,
+          handleDateSelect,
+          handleEventClick,
+          handleEventDrop,
+          handleEventResize,
+          handleEvents,
+          handleEventAdd,
+          handleEventChange,
+          handleEventRemove,
+        })
+      ),
     };
   },
 });
 </script>
+
+<style lang="css" scoped>
+.title-center {
+  justify-content: center;
+}
+</style>
