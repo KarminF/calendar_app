@@ -16,12 +16,12 @@
         readonly
       ></v-textarea>
       <v-text-field
-        v-model="currentEvent.start"
+        v-model="currentEvent.startStr"
         label="from"
         readonly
       ></v-text-field>
       <v-text-field
-        v-model="currentEvent.end"
+        v-model="currentEvent.endStr"
         label="to"
         readonly
       ></v-text-field>

@@ -1,5 +1,6 @@
 <template>
   <NavBar />
+  <Temp />
   <DeviceList :devices="devices" />
 </template>
 

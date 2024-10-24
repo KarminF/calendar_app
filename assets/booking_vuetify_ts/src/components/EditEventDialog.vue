@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/no-mutating-props -->
 <template>
   <v-dialog v-model="isOpen" width="auto">
+    <v-btn @click="debug">debug</v-btn>
     <v-sheet width="400">
       <v-card-title>
         <span>Edit Event</span>
@@ -11,17 +12,39 @@
           v-model="currentEvent.desc"
           label="description"
         ></v-textarea>
-        <v-text-field
-          v-model="currentEvent.start"
-          label="from"
-          readonly
-          @click="startClick"
-        ></v-text-field>
-        <v-text-field
-          v-model="currentEvent.end"
-          label="to"
-          readonly
-        ></v-text-field>
+
+        <v-menu v-model="datePickerStart" :close-on-content-click="false">
+          <template v-slot:activator="{ props }">
+            <v-text-field
+              v-model="currentEvent.startStr"
+              label="from"
+              prepend-icon="mdi-calendar"
+              readonly
+              v-bind="props"
+            ></v-text-field>
+          </template>
+          <v-date-picker
+            v-model="currentEvent.start"
+            @update:model-value="datePickerStart = false"
+          ></v-date-picker>
+        </v-menu>
+
+        <v-menu v-model="datePickerEnd" :close-on-content-click="false">
+          <template v-slot:activator="{ props }">
+            <v-text-field
+              v-model="currentEvent.endStr"
+              label="to"
+              prepend-icon="mdi-calendar"
+              readonly
+              v-bind="props"
+            ></v-text-field>
+          </template>
+          <v-date-picker
+            v-model="currentEvent.end"
+            @update:model-value="datePickerEnd = false"
+          ></v-date-picker>
+        </v-menu>
+
         <v-switch
           v-model="currentEvent.allDay"
           label="All Day Event?"
@@ -29,28 +52,19 @@
         <v-btn class="mt-1" type="submit" block>Submit</v-btn>
         <v-btn class="mt-1" @click="deleteEvent" block>Delete</v-btn>
         <v-btn class="mt-1" @click="closeDialog" block>Cancel</v-btn>
-        <v-dialog v-model="datePicker">
-          <v-date-picker
-            v-model="dateSelection"
-            @change="datePicker = false"
-          ></v-date-picker>
-        </v-dialog>
-        <v-dialog v-model="timePicker">
-          <v-time-picker v-model="startObj"></v-time-picker>
-        </v-dialog>
       </v-form>
     </v-sheet>
   </v-dialog>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref, toRefs } from "vue";
+import { defineComponent, PropType, ref, toRefs, watch } from "vue";
 import { EventInput } from "@fullcalendar/core";
 import { VTimePicker } from "vuetify/labs/VTimePicker";
 
 interface Event extends EventInput {
-  start: string;
-  end?: string;
+  start: Date;
+  end?: Date;
   desc?: string;
 }
 
@@ -70,16 +84,18 @@ export default defineComponent({
   },
   emits: ["close", "submit", "delete"],
   setup(props, { emit }) {
+    const debug = () => {
+      console.log("currentEvent start", currentEvent.value.start);
+      console.log("instanceof Date", currentEvent.value.start instanceof Date);
+    };
     const currentEvent = ref({ ...props.event });
-    const startObj = ref(new Date());
-    const endObj = ref(new Date());
-    const datePicker = ref(false);
+    const selectedDate = ref(null);
+    const selectedTime = ref(null);
+    const datePickerStart = ref(false);
+    const datePickerEnd = ref(false);
     const timePicker = ref(false);
     const dateSelection = ref("");
     const timeSelection = ref("");
-    const startClick = () => {
-      datePicker.value = true;
-    };
     const submitEvent = () => {
       emit("submit", currentEvent.value);
     };
@@ -89,16 +105,47 @@ export default defineComponent({
     const deleteEvent = () => {
       emit("delete");
     };
+    const formatDate = (date: Date) =>{
+      console.log("dateeeeeee", date);
+      console.log(date instanceof Date);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0"); // months are zero indexed
+      const day = String(date.getDate()).padStart(2, "0");
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+
+      return `${year}-${month}-${day} ${hours}:${minutes}`;
+    }
+
+    watch(
+      () => currentEvent.value.start,
+      (newVal) => {
+        if (newVal) {
+          currentEvent.value.startStr = formatDate(newVal);
+        }
+      }
+    )
+
+    watch(
+      () => currentEvent.value.end,
+      (newVal) => {
+        if (newVal) {
+          currentEvent.value.endStr = formatDate(newVal);
+        }
+      }
+    )
+
     return {
       ...toRefs({
+        debug,
         currentEvent,
-        startObj,
-        endObj,
-        datePicker,
+        selectedDate,
+        selectedTime,
+        datePickerStart,
+        datePickerEnd,
         timePicker,
         dateSelection,
         timeSelection,
-        startClick,
         submitEvent,
         closeDialog,
         deleteEvent,
@@ -109,10 +156,8 @@ export default defineComponent({
     isOpen(val) {
       if (val) {
         this.currentEvent = { ...this.event };
-        this.startObj = new Date(this.event.start.replace("T", " "));
-        this.startObj.getDate();
       }
-    },
+    }
   },
 });
 </script>

@@ -58,6 +58,9 @@ import { EventApi, EventInput } from "@fullcalendar/core";
 
 interface CurrentEvent extends EventInput {
   desc?: string;
+  // for displaying date in dialog, not for storing, it's different from the startStr from FullCalendar
+  startStr?: string;
+  endStr?: string;
 }
 
 export default defineComponent({
@@ -201,10 +204,15 @@ export default defineComponent({
     }
 
     function handleDateSelect(selectInfo: any): void {
-      currentEvent.start = dateStrToReadable(selectInfo.startStr);
-      currentEvent.end = dateStrToReadable(selectInfo.endStr);
+      currentEvent.start = selectInfo.start;
+      currentEvent.end = selectInfo.end ? selectInfo.end : selectInfo.start;
+      currentEvent.startStr = dateStrToReadable(selectInfo.startStr);
+      currentEvent.endStr = dateStrToReadable(selectInfo.endStr);
       currentEvent.allDay = selectInfo.allDay;
       addEventDialog.value = true;
+
+      console.log("selectInfo:", selectInfo);
+      console.log("type of start", typeof( selectInfo.start));
     }
 
     function handleEventClick(clickInfo: any): void {
@@ -212,8 +220,10 @@ export default defineComponent({
         id: clickInfo.event.id,
         title: clickInfo.event.title,
         desc: clickInfo.event.extendedProps.description,
-        start: dateStrToReadable(clickInfo.event.startStr),
-        end: dateStrToReadable(clickInfo.event.endStr),
+        start: clickInfo.event.start,
+        end: clickInfo.event ? clickInfo.event.end : clickInfo.event.start,
+        startStr: dateStrToReadable(clickInfo.event.startStr),
+        endStr: dateStrToReadable(clickInfo.event.endStr),
         allDay: clickInfo.event.allDay,
       });
       eventDetailDialog.value = true;

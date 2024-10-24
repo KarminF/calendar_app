@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-mutating-props -->
 <template>
 <v-dialog v-model="isOpen" width="auto">
     <v-sheet class="mx-auto" width="400">
@@ -11,12 +12,12 @@
           label="description"
         ></v-textarea>
         <v-text-field
-          v-model="currentEvent.start"
+          v-model="currentEvent.startStr"
           label="from"
           readonly
         ></v-text-field>
         <v-text-field
-          v-model="currentEvent.end"
+          v-model="currentEvent.endStr"
           label="to"
           readonly
         ></v-text-field>
