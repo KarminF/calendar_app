@@ -2,132 +2,43 @@
   <h3 style="text-align: center">Booking Calendar for: {{ deviceName }}</h3>
   <v-divider></v-divider>
 
-  <v-dialog v-model="addEventDialog" width="auto">
-    <v-sheet class="mx-auto" width="400">
-      <v-card-title>
-        <span class="headline">New Event</span>
-      </v-card-title>
-      <v-form @submit.prevent="submitAddEvent">
-        <v-text-field v-model="currentEvent.title" label="title"></v-text-field>
-        <v-textarea
-          v-model="currentEvent.desc"
-          label="description"
-        ></v-textarea>
-        <v-switch
-          v-model="currentEvent.allDay"
-          label="All Day Event?"
-        ></v-switch>
-        <v-btn class="mt-1" type="submit" block>Submit</v-btn>
-        <v-btn
-          class="mt-1"
-          @click="
-            addEventDialog = false;
-            clearCurrentEvent();
-          "
-          block
-          >Cancel</v-btn
-        >
-      </v-form>
-    </v-sheet>
-  </v-dialog>
+  <AddEventDialog
+    :event="currentEvent"
+    :isOpen="addEventDialog"
+    @submit="submitAddEvent"
+    @close="
+      addEventDialog = false;
+      clearCurrentEvent();
+    "
+  />
 
-  <v-dialog v-model="eventDetailDialog" width="auto">
-    <v-sheet class="mx-auto" width="400">
-      <v-card-title>
-        <span class="headline">Details</span>
-      </v-card-title>
-      <v-form>
-        <v-text-field
-          v-model="currentEvent.title"
-          label="title"
-          readonly
-        ></v-text-field>
-        <v-textarea
-          v-model="currentEvent.desc"
-          label="description"
-          readonly
-        ></v-textarea>
-        <v-btn
-          class="mt-1"
-          @click="
-            editEventDialog = true;
-            eventDetailDialog = false;
-          "
-          block
-          >Edit</v-btn
-        >
-        <v-btn
-          class="mt-1"
-          @click="
-            deleteEvent();
-            eventDetailDialog = false;
-          "
-          block
-          >Delete</v-btn
-        >
-        <v-btn
-          class="mt-1"
-          @click="
-            eventDetailDialog = false;
-            clearCurrentEvent();
-          "
-          block
-          >Cancel</v-btn
-        >
-      </v-form>
-    </v-sheet>
-  </v-dialog>
+  <EventDetailDialog
+    :event="currentEvent"
+    :isOpen="eventDetailDialog"
+    @edit="
+      editEventDialog = true;
+      eventDetailDialog = false;
+    "
+    @delete="
+      deleteEvent();
+      eventDetailDialog = false;
+    "
+    @close="
+      eventDetailDialog = false;
+      clearCurrentEvent();
+    "
+  />
 
-  <v-dialog v-model="editEventDialog">
-    <v-sheet class="mx-auto" max-width="800">
-      <v-card width="785">
-        <v-card-title>
-          <span class="title-center">Edit Event</span>
-        </v-card-title>
-        <v-form @submit.prevent="submitEditEvent">
-          <v-row>
-            <v-col cols="6">
-              <v-text-field
-                v-model="currentEvent.title"
-                label="title"
-              ></v-text-field>
-              <v-textarea
-                v-model="currentEvent.desc"
-                label="description"
-              ></v-textarea>
-              <v-switch
-                v-model="currentEvent.allDay"
-                label="All Day Event?"
-              ></v-switch>
-              <v-btn class="mt-1" type="submit" block>Submit</v-btn>
-              <v-btn
-                class="mt-1"
-                @click="
-                  deleteEvent();
-                  editEventDialog = false;
-                "
-                block
-                >Delete</v-btn
-              >
-              <v-btn
-                class="mt-1"
-                @click="
-                  editEventDialog = false;
-                  clearCurrentEvent();
-                "
-                block
-                >Cancel</v-btn
-              >
-            </v-col>
-            <v-col cols="4">
-              <v-date-picker></v-date-picker>
-              <v-time-picker></v-time-picker>
-            </v-col>
-          </v-row>
-        </v-form>
-      </v-card>
-    </v-sheet>
-  </v-dialog>
+  <EditEventDialog
+    :event="currentEvent"
+    :isOpen="editEventDialog"
+    @submit="submitEditEvent"
+    @close="editEventDialog = false"
+    @delete="
+      deleteEvent();
+      editEventDialog = false;
+    "
+  />
 
   <FullCalendar ref="fullCalendar" class="calendar" :options="calendarOptions">
     <template v-slot:eventContent="arg">
@@ -144,7 +55,6 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { EventApi, EventInput } from "@fullcalendar/core";
-import { VTimePicker } from 'vuetify/labs/VTimePicker'
 
 interface CurrentEvent extends EventInput {
   desc?: string;
@@ -159,10 +69,8 @@ export default defineComponent({
   },
   components: {
     FullCalendar,
-    VTimePicker,
   },
   setup(props) {
-    console.log("props", props);
     const addEventDialog = ref(false);
     const editEventDialog = ref(false);
     const eventDetailDialog = ref(false);
@@ -212,6 +120,21 @@ export default defineComponent({
       dayMaxEvents: true,
       weekends: true,
       eventResizableFromStart: true,
+      slotLabelFormat: {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      },
+      eventTimeFormat: {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      },
+      titleFormat: {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+      },
       select: handleDateSelect,
       eventClick: handleEventClick,
       eventsSet: handleEvents,
@@ -221,35 +144,36 @@ export default defineComponent({
       eventResize: handleEventResize,
     });
 
-    function submitAddEvent(): void {
+    function submitAddEvent(event: CurrentEvent): void {
       addEventDialog.value = false;
       if (calendarApi.value === null) return; // should not happen
       calendarApi.value.addEvent({
         id: (calendarApi.value.getEvents().length + 1).toString(),
-        title: currentEvent.title,
-        start: currentEvent.start,
-        end: currentEvent.end,
-        allDay: currentEvent.allDay,
+        title: event.title,
+        start: event.start,
+        end: event.end,
+        allDay: event.allDay,
         extendedProps: {
-          description: currentEvent.desc,
+          description: event.desc,
         },
       });
     }
 
-    function submitEditEvent(): void {
+    function submitEditEvent(newEvent: CurrentEvent): void {
       editEventDialog.value = false;
       if (calendarApi.value === null) return; // should not happen
       const event = currentEvent.id
         ? calendarApi.value.getEventById(currentEvent.id)
         : null;
       if (event) {
-        event.setProp("title", currentEvent.title);
-        event.setExtendedProp("description", currentEvent.desc);
-        event.setAllDay(currentEvent.allDay ?? false);
+        event.setProp("title", newEvent.title);
+        event.setExtendedProp("description", newEvent.desc);
+        event.setAllDay(newEvent.allDay ?? false);
         handleEventChange(event);
       } else {
         console.error("submitEditEvent: event not found");
       }
+      clearCurrentEvent();
     }
 
     function deleteEvent(): void {
@@ -277,8 +201,9 @@ export default defineComponent({
     }
 
     function handleDateSelect(selectInfo: any): void {
-      currentEvent.start = selectInfo.startStr;
-      currentEvent.end = selectInfo.endStr;
+      currentEvent.start = dateStrToReadable(selectInfo.startStr);
+      currentEvent.end = dateStrToReadable(selectInfo.endStr);
+      currentEvent.allDay = selectInfo.allDay;
       addEventDialog.value = true;
     }
 
@@ -287,11 +212,15 @@ export default defineComponent({
         id: clickInfo.event.id,
         title: clickInfo.event.title,
         desc: clickInfo.event.extendedProps.description,
-        start: clickInfo.event.start,
-        end: clickInfo.event.end,
+        start: dateStrToReadable(clickInfo.event.startStr),
+        end: dateStrToReadable(clickInfo.event.endStr),
         allDay: clickInfo.event.allDay,
       });
       eventDetailDialog.value = true;
+    }
+
+    function dateStrToReadable(date: string): string {
+      return date.slice(0, 10) + " " + date.slice(11, 16);
     }
 
     function handleEventDrop(arg: { event: EventApi }): void {

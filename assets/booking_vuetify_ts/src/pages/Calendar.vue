@@ -1,6 +1,5 @@
 <template>
   <NavBar />
-  <h1>{{ deviceName }}</h1>
   <BookingCalendar :deviceName="deviceName"/>
 </template>
 

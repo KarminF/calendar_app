@@ -7,8 +7,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AddEventDialog: typeof import('./src/components/AddEventDialog.vue')['default']
     BookingCalendar: typeof import('./src/components/BookingCalendar.vue')['default']
     DeviceList: typeof import('./src/components/DeviceList.vue')['default']
+    EditEventDialog: typeof import('./src/components/EditEventDialog.vue')['default']
+    EventDetailDialog: typeof import('./src/components/EventDetailDialog.vue')['default']
+    EventDetailedDialog: typeof import('./src/components/EventDetailedDialog.vue')['default']
     NavBar: typeof import('./src/components/NavBar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
