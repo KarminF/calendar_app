@@ -163,6 +163,8 @@ export default defineComponent({
     }
 
     function submitEditEvent(newEvent: CurrentEvent): void {
+      console.log("submitedit", newEvent.endStr);
+      console.log("typeof newEvent");
       editEventDialog.value = false;
       if (calendarApi.value === null) return; // should not happen
       const event = currentEvent.id
@@ -171,6 +173,8 @@ export default defineComponent({
       if (event) {
         event.setProp("title", newEvent.title);
         event.setExtendedProp("description", newEvent.desc);
+        if (newEvent.start) event.setStart(newEvent.start);
+        if (newEvent.end) event.setEnd(newEvent.end);
         event.setAllDay(newEvent.allDay ?? false);
         handleEventChange(event);
       } else {
@@ -210,12 +214,10 @@ export default defineComponent({
       currentEvent.endStr = dateStrToReadable(selectInfo.endStr);
       currentEvent.allDay = selectInfo.allDay;
       addEventDialog.value = true;
-
-      console.log("selectInfo:", selectInfo);
-      console.log("type of start", typeof( selectInfo.start));
     }
 
     function handleEventClick(clickInfo: any): void {
+      console.log("clickInfo", clickInfo);
       Object.assign(currentEvent, {
         id: clickInfo.event.id,
         title: clickInfo.event.title,

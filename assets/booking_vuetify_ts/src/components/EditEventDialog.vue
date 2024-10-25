@@ -13,37 +13,61 @@
           label="description"
         ></v-textarea>
 
-        <v-menu v-model="datePickerStart" :close-on-content-click="false">
-          <template v-slot:activator="{ props }">
-            <v-text-field
-              v-model="currentEvent.startStr"
-              label="from"
-              prepend-icon="mdi-calendar"
-              readonly
-              v-bind="props"
-            ></v-text-field>
-          </template>
-          <v-date-picker
-            v-model="currentEvent.start"
-            @update:model-value="datePickerStart = false"
-          ></v-date-picker>
-        </v-menu>
+        <v-text-field
+          v-model="currentEvent.startStr"
+          :active="dialogStart"
+          :focused="dialogStart"
+          label="Picker in dialog"
+          prepend-icon="mdi-clock-time-four-outline"
+          readonly
+        >
+          <v-dialog v-model="dialogStart" activator="parent" width="auto">
+            <v-date-picker
+              v-if="datePickerStart"
+              v-model="selectedDateStart"
+              @update:model-value="
+                datePickerStart = false;
+                timePickerStart = true;
+              "
+            ></v-date-picker>
+            <v-time-picker
+              v-if="timePickerStart"
+              v-model="selectedTimeStart"
+              @update:model-value="
+                timePickerStart = false;
+                dialogStart = false;
+              "
+            ></v-time-picker>
+          </v-dialog>
+        </v-text-field>
 
-        <v-menu v-model="datePickerEnd" :close-on-content-click="false">
-          <template v-slot:activator="{ props }">
-            <v-text-field
-              v-model="currentEvent.endStr"
-              label="to"
-              prepend-icon="mdi-calendar"
-              readonly
-              v-bind="props"
-            ></v-text-field>
-          </template>
-          <v-date-picker
-            v-model="currentEvent.end"
-            @update:model-value="datePickerEnd = false"
-          ></v-date-picker>
-        </v-menu>
+        <v-text-field
+          v-model="currentEvent.endStr"
+          :active="dialogEnd"
+          :focused="dialogEnd"
+          label="Picker in dialog"
+          prepend-icon="mdi-clock-time-four-outline"
+          readonly
+        >
+          <v-dialog v-model="dialogEnd" activator="parent" width="auto">
+            <v-date-picker
+              v-if="datePickerEnd"
+              v-model="selectedDateEnd"
+              @update:model-value="
+                datePickerEnd = false;
+                timePickerEnd  = true;
+              "
+            ></v-date-picker>
+            <v-time-picker
+              v-if="timePickerEnd"
+              v-model="selectedTimeEnd "
+              @update:model-value="
+                timePickerEnd  = false;
+                dialogEnd = false;
+              "
+            ></v-time-picker>
+          </v-dialog>
+        </v-text-field>
 
         <v-switch
           v-model="currentEvent.allDay"
@@ -87,13 +111,21 @@ export default defineComponent({
     const debug = () => {
       console.log("currentEvent start", currentEvent.value.start);
       console.log("instanceof Date", currentEvent.value.start instanceof Date);
+      console.log("selectedTimeStart", selectedTimeStart.value);
+      console.log("selectedTimeEnd", selectedTimeEnd.value);
+      console.log("typeof selectedTimeStart", typeof selectedTimeStart.value);
     };
     const currentEvent = ref({ ...props.event });
-    const selectedDate = ref(null);
-    const selectedTime = ref(null);
+    const selectedDateStart = ref(new Date());
+    const selectedTimeStart = ref("");
+    const selectedDateEnd = ref(new Date());
+    const selectedTimeEnd = ref("");
+    const dialogStart = ref(false);
+    const dialogEnd = ref(false);
     const datePickerStart = ref(false);
     const datePickerEnd = ref(false);
-    const timePicker = ref(false);
+    const timePickerStart = ref(false);
+    const timePickerEnd = ref(false);
     const dateSelection = ref("");
     const timeSelection = ref("");
     const submitEvent = () => {
@@ -105,9 +137,7 @@ export default defineComponent({
     const deleteEvent = () => {
       emit("delete");
     };
-    const formatDate = (date: Date) =>{
-      console.log("dateeeeeee", date);
-      console.log(date instanceof Date);
+    const formatDate = (date: Date) => {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, "0"); // months are zero indexed
       const day = String(date.getDate()).padStart(2, "0");
@@ -115,7 +145,43 @@ export default defineComponent({
       const minutes = String(date.getMinutes()).padStart(2, "0");
 
       return `${year}-${month}-${day} ${hours}:${minutes}`;
-    }
+    };
+
+    const addTimeToDate = (time: string, date: Date, isStart: boolean) => {
+      const [hours, minutes] = selectedTimeStart.value.split(":").map(Number);
+      date.setHours(hours);
+      date.setMinutes(minutes);
+      if(isStart) currentEvent.value.start = date;
+      else currentEvent.value.end = date;
+    };
+
+    watch(
+      () => dialogStart.value,
+      (val) => {
+        datePickerStart.value = val;
+      }
+    );
+
+    watch(
+      () => dialogEnd.value,
+      (val) => {
+        datePickerEnd.value = val;
+      }
+    );
+
+    watch(
+      () => selectedTimeStart.value,
+      (val) => {
+        addTimeToDate(val, selectedDateStart.value, true);
+      }
+    );
+
+    watch(
+      () => selectedTimeEnd.value,
+      (val) => {
+        addTimeToDate(val, selectedDateEnd.value, false);
+      }
+    );
 
     watch(
       () => currentEvent.value.start,
@@ -124,7 +190,7 @@ export default defineComponent({
           currentEvent.value.startStr = formatDate(newVal);
         }
       }
-    )
+    );
 
     watch(
       () => currentEvent.value.end,
@@ -133,17 +199,22 @@ export default defineComponent({
           currentEvent.value.endStr = formatDate(newVal);
         }
       }
-    )
+    );
 
     return {
       ...toRefs({
         debug,
         currentEvent,
-        selectedDate,
-        selectedTime,
+        selectedDateStart,
+        selectedTimeStart,
+        selectedDateEnd,
+        selectedTimeEnd,
+        dialogStart,
+        dialogEnd,
         datePickerStart,
         datePickerEnd,
-        timePicker,
+        timePickerStart,
+        timePickerEnd,
         dateSelection,
         timeSelection,
         submitEvent,
@@ -157,7 +228,7 @@ export default defineComponent({
       if (val) {
         this.currentEvent = { ...this.event };
       }
-    }
+    },
   },
 });
 </script>
