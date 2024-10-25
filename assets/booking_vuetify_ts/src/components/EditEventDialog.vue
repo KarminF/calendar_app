@@ -1,6 +1,6 @@
-<!-- eslint-disable vue/no-mutating-props -->
+
 <template>
-  <v-dialog v-model="isOpen" width="auto">
+  <v-dialog v-model="localIsOpen" width="auto">
     <v-btn @click="debug">debug</v-btn>
     <v-sheet width="400">
       <v-card-title>
@@ -32,6 +32,7 @@
             ></v-date-picker>
             <v-time-picker
               v-if="timePickerStart"
+              format="24hr"
               v-model="selectedTimeStart"
               @update:model-value="
                 timePickerStart = false;
@@ -60,6 +61,7 @@
             ></v-date-picker>
             <v-time-picker
               v-if="timePickerEnd"
+              format="24hr"
               v-model="selectedTimeEnd "
               @update:model-value="
                 timePickerEnd  = false;
@@ -110,11 +112,11 @@ export default defineComponent({
   setup(props, { emit }) {
     const debug = () => {
       console.log("currentEvent start", currentEvent.value.start);
-      console.log("instanceof Date", currentEvent.value.start instanceof Date);
+      console.log("currentEvent end", currentEvent.value.end);
       console.log("selectedTimeStart", selectedTimeStart.value);
       console.log("selectedTimeEnd", selectedTimeEnd.value);
-      console.log("typeof selectedTimeStart", typeof selectedTimeStart.value);
     };
+    const localIsOpen = ref(props.isOpen);
     const currentEvent = ref({ ...props.event });
     const selectedDateStart = ref(new Date());
     const selectedTimeStart = ref("");
@@ -148,12 +150,30 @@ export default defineComponent({
     };
 
     const addTimeToDate = (time: string, date: Date, isStart: boolean) => {
-      const [hours, minutes] = selectedTimeStart.value.split(":").map(Number);
+      const [hours, minutes] = time.split(":").map(Number);
       date.setHours(hours);
       date.setMinutes(minutes);
       if(isStart) currentEvent.value.start = date;
       else currentEvent.value.end = date;
     };
+
+    watch(
+      () => props.isOpen,
+      (val) => {
+        localIsOpen.value = val;
+        console.log("props.isOpen", val);
+        console.log("localIsOpen", localIsOpen.value);
+      }
+    );
+    
+    watch(
+      () => localIsOpen.value,
+      (val) => {
+        if (!val) {
+          emit("close");
+        }
+      }
+    )
 
     watch(
       () => dialogStart.value,
@@ -203,6 +223,7 @@ export default defineComponent({
 
     return {
       ...toRefs({
+        localIsOpen,
         debug,
         currentEvent,
         selectedDateStart,

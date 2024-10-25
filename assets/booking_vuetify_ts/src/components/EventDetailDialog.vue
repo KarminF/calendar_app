@@ -1,6 +1,6 @@
-<!-- eslint-disable vue/no-mutating-props -->
+
 <template>
-  <v-dialog v-model="isOpen" width="auto">
+  <v-dialog v-model="localIsOpen" width="auto">
     <v-sheet class="mx-auto" width="400">
       <v-card-title>
         <span class="headline">Details</span>
@@ -55,12 +55,19 @@ export default defineComponent({
   data() {
     return {
       currentEvent: { ...this.event },
+      localIsOpen: this.isOpen,
     };
   },
   watch: {
     isOpen(val) {
+      this.localIsOpen = val;
       if (val) {
         this.currentEvent = { ...this.event };
+      }
+    },
+    localIsOpen(val) {
+      if (!val) {
+        this.$emit("close");
       }
     },
   },
