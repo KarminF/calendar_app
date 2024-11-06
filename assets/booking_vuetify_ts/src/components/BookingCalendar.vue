@@ -16,17 +16,14 @@
     :event="currentEvent"
     :isOpen="eventDetailDialog"
     @edit="
-      editEventDialog = true;
       eventDetailDialog = false;
+      editEventDialog = true;
     "
     @delete="
       deleteEvent();
       eventDetailDialog = false;
     "
-    @close="
-      eventDetailDialog = false;
-      clearCurrentEvent();
-    "
+    @close="eventDetailDialog = false"
   />
 
   <EditEventDialog
@@ -123,6 +120,7 @@ export default defineComponent({
       dayMaxEvents: true,
       weekends: true,
       eventResizableFromStart: true,
+      locale: "de",
       slotLabelFormat: {
         hour: "2-digit",
         minute: "2-digit",
@@ -132,11 +130,6 @@ export default defineComponent({
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,
-      },
-      titleFormat: {
-        year: "numeric",
-        month: "numeric",
-        day: "numeric",
       },
       select: handleDateSelect,
       eventClick: handleEventClick,
@@ -217,7 +210,6 @@ export default defineComponent({
     }
 
     function handleEventClick(clickInfo: any): void {
-      console.log("clickInfo", clickInfo);
       Object.assign(currentEvent, {
         id: clickInfo.event.id,
         title: clickInfo.event.title,
@@ -228,6 +220,7 @@ export default defineComponent({
         endStr: dateStrToReadable(clickInfo.event.endStr),
         allDay: clickInfo.event.allDay,
       });
+      console.log("handleEventClick,ce:", currentEvent);
       eventDetailDialog.value = true;
     }
 
