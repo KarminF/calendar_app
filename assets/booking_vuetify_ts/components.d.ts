@@ -12,7 +12,6 @@ declare module 'vue' {
     DeviceList: typeof import('./src/components/DeviceList.vue')['default']
     EditEventDialog: typeof import('./src/components/EditEventDialog.vue')['default']
     EventDetailDialog: typeof import('./src/components/EventDetailDialog.vue')['default']
-    EventDetailedDialog: typeof import('./src/components/EventDetailedDialog.vue')['default']
     NavBar: typeof import('./src/components/NavBar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

@@ -1,5 +1,5 @@
 /**
- * main.ts
+ * navbar.ts
  *
  * Bootstraps Vuetify and other plugins then mounts the App`
  */
@@ -8,21 +8,16 @@
 import { registerPlugins } from '@/plugins'
 
 // Components
-import App from './App.vue'
+import NavBar from './components/NavBar.vue'
 
 // Composables
 import { createApp } from 'vue'
 
-import { createAppRouter } from './router';
-
 import 'vuetify/dist/vuetify.min.css';
 
-const app = createApp(App)
 
-const router = createAppRouter('/booking');
-
-app.use(router);
+const app = createApp(NavBar)
 
 registerPlugins(app)
 
-app.mount('#app')
+app.mount('#navbar')

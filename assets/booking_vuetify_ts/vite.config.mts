@@ -8,6 +8,7 @@ import VueRouter from 'unplugin-vue-router/vite'
 // Utilities
 import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
+import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -34,7 +35,16 @@ export default defineConfig({
     }),
   ],
   build: {
-    outDir: '../../static/js/booking_vuetify_ts',
+    outDir: path.resolve(__dirname, '../../static/js/booking_vuetify_ts'),
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'src/main.ts'),
+        navbar: path.resolve(__dirname, 'src/navbar.ts'),
+      },
+      output: {
+        entryFileNames: '[name].js',
+      },
+    },
   },
   define: { 'process.env': {} },
   resolve: {

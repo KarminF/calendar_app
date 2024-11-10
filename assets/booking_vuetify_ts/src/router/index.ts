@@ -1,15 +1,21 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import index from '@/pages/index.vue';
+// src/router/index.ts
+import { createRouter, createWebHistory, Router } from 'vue-router';
+import Index from '@/pages/index.vue';
 import Calendar from '@/pages/Calendar.vue';
 
 const routes = [
-    { path: '/', component: index },
+    { path: '/', component: Index },
     { path: '/calendar', component: Calendar },
 ];
 
-const router = createRouter({
-    history: createWebHistory(process.env.BASE_URL),
-    routes,
-});
-
-export default router;
+/**
+ * 创建一个 Vue Router 实例
+ * @param base - 路由的基础路径
+ * @returns Vue Router 实例
+ */
+export function createAppRouter(base: string = '/'): Router {
+    return createRouter({
+        history: createWebHistory(base),
+        routes,
+    });
+}

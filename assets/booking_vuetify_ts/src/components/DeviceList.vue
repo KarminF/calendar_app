@@ -17,7 +17,7 @@ interface Device {
   description: string;
   id: number;
 }
-const props = defineProps<{
+defineProps<{
   devices: Array<Device>;
 }>();
 </script>
