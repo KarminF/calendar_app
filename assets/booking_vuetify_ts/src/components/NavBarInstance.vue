@@ -4,22 +4,13 @@
       <v-btn
         v-for="link in links"
         :key="link.text"
-        :to="{path: link.url}"
+        :href="link.url"
         class="mx-2"
         color="white"
         rounded="xl"
         variant="text"
       >
         {{ link.text }}
-      </v-btn>
-      <v-btn
-        href="/"
-        class="mx-2"
-        color="white"
-        rounded="xl"
-        variant="text"
-      >
-        Index
       </v-btn>
       <!-- <v-col class="text-center mt-4" cols="12">
           {{ new Date().getFullYear() }} — <strong>Device Calendar</strong>
@@ -30,8 +21,26 @@
 
 <script lang="ts" setup>
   const links = [
-    { text: "Home", url: "/" },
-    { text: "Devices", url: "/devices/" },
-    { text: "People", url: "/people" },
+    { text: "Home", url: "/booking/" },
+    { text: "Login", url: "/login/" },
+    { text: "Register", url: "/register/" },
+    { text: "Logout", url: "/logout/" },
   ];
 </script>
+
+<style scoped>
+nav {
+  background-color: #333;
+  color: #fff;
+  padding: 1rem;
+}
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+}
+nav a {
+  color: #fff;
+  text-decoration: none;
+}
+</style>

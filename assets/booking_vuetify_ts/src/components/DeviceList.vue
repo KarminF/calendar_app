@@ -1,11 +1,21 @@
 <template>
+  <h1>Devices</h1>
   <v-row class="cards">
-    <v-col cols="12" md="4" v-for="device in devices" :key="device.id">
+    <v-col
+      cols="12"
+      md="4"
+      v-for="device in devices"
+      :key="device.deviceinstance_id"
+    >
       <v-card
         :title="device.name"
-        subtitle="this is a subtitle"
-        :text="device.description"
-        :to="{ path: '/calendar', query: { deviceName: device.name } }"
+        :to="{
+          path: '/calendar',
+          query: {
+            deviceName: device.name,
+            deviceId: device.deviceinstance_id,
+          },
+        }"
       ></v-card>
     </v-col>
   </v-row>
@@ -14,10 +24,11 @@
 <script lang="ts" setup>
 interface Device {
   name: string;
-  description: string;
-  id: number;
+  deviceinstance_id: string;
 }
-defineProps<{
+const props = defineProps<{
   devices: Array<Device>;
 }>();
+
+// console.log(props.devices);
 </script>

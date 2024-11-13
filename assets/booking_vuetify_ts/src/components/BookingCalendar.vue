@@ -1,5 +1,6 @@
 <template>
   <h3 style="text-align: center">Booking Calendar for: {{ deviceName }}</h3>
+  <p style="text-align: center">Id: {{ deviceId }}</p>
   <v-divider></v-divider>
 
   <AddEventDialog
@@ -8,7 +9,6 @@
     @submit="submitAddEvent"
     @close="
       addEventDialog = false;
-      clearCurrentEvent();
     "
   />
 
@@ -46,7 +46,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, reactive, toRefs, onMounted } from "vue";
+import { useRoute } from 'vue-router';
+import { defineComponent, ref, reactive, toRefs, onMounted, toRaw } from "vue";
 import FullCalendar from "@fullcalendar/vue3";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -60,17 +61,31 @@ interface CurrentEvent extends EventInput {
   endStr?: string;
 }
 
+interface Booking {
+  title: string,
+  description: string,
+  datetime_start: Date | null,
+  datetime_end: Date | null,
+  user: string | null,
+  device_instance: string,
+}
+
+
+
 export default defineComponent({
   props: {
     deviceName: {
       type: String,
       required: true,
-    },
+    }
   },
   components: {
     FullCalendar,
   },
-  setup(props) {
+  setup() {
+    const route = useRoute();
+    const deviceName = ref(route.query.deviceName || '');
+    const deviceId = ref(route.query.deviceId as string || '');
     const addEventDialog = ref(false);
     const editEventDialog = ref(false);
     const eventDetailDialog = ref(false);
@@ -85,13 +100,14 @@ export default defineComponent({
       end: undefined,
       allDay: false,
     });
-    const currentEvents = ref<EventApi[]>([]);
+    const currentEvents = ref<EventInput[]>([]);
     const rules = {
       required: (value: string | boolean) => !!value || "Required.",
     };
     onMounted(() => {
       if (fullCalendar.value) {
         calendarApi.value = fullCalendar.value.getApi();
+        fetchEvents();
       }
     });
     const calendarOptions = reactive({
@@ -102,18 +118,8 @@ export default defineComponent({
         right: "dayGridMonth,timeGridWeek,timeGridDay",
       },
       initialView: "timeGridWeek",
-      initialEvents: [
-        {
-          id: "1",
-          title: "All-day event",
-          start: new Date().toISOString().replace(/T.*$/, ""),
-        },
-        {
-          id: "2",
-          title: "Timed event",
-          start: new Date().toISOString().replace(/T.*$/, "") + "T12:00:00",
-        },
-      ],
+      // initialEvents: toRaw(currentEvents.value),
+      events: currentEvents,
       editable: true,
       selectable: true,
       selectMirror: true,
@@ -173,7 +179,6 @@ export default defineComponent({
       } else {
         console.error("submitEditEvent: event not found");
       }
-      clearCurrentEvent();
     }
 
     function deleteEvent(): void {
@@ -187,20 +192,11 @@ export default defineComponent({
       } else {
         console.error("deleteEvent: event not found");
       }
-      clearCurrentEvent();
-    }
-
-    function clearCurrentEvent(): void {
-      Object.assign(currentEvent, {
-        title: "",
-        desc: "",
-        start: undefined,
-        end: undefined,
-        allDay: false,
-      });
     }
 
     function handleDateSelect(selectInfo: any): void {
+      currentEvent.title = "";
+      currentEvent.desc = "";
       currentEvent.start = selectInfo.start;
       currentEvent.end = selectInfo.end ? selectInfo.end : selectInfo.start;
       currentEvent.startStr = dateStrToReadable(selectInfo.startStr);
@@ -220,7 +216,7 @@ export default defineComponent({
         endStr: dateStrToReadable(clickInfo.event.endStr),
         allDay: clickInfo.event.allDay,
       });
-      console.log("handleEventClick,ce:", currentEvent);
+      // console.log("handleEventClick,ce:", currentEvent);
       eventDetailDialog.value = true;
     }
 
@@ -239,12 +235,34 @@ export default defineComponent({
     }
 
     function handleEvents(events: EventApi[]): void {
-      currentEvents.value = events;
       console.log("handleEvents");
     }
 
-    function handleEventAdd(arg: { event: EventApi }): void {
+    async function handleEventAdd(arg: { event: EventApi }): Promise<void> {
       console.log("adding to database:", arg.event);
+      console.log("currentEvent:", currentEvent);
+      const booking: Booking = {
+        title: arg.event.title,
+        description: arg.event.extendedProps.description,
+        datetime_start: arg.event.start,
+        datetime_end: arg.event.end,
+        user: null, // todo: provide a valid user value
+        device_instance: deviceId.value,
+      };
+      fetch('http://127.0.0.1:8000/api/bookings/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(booking),
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Success:', data);
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
     }
 
     function handleEventChange(event: EventApi): void {
@@ -255,11 +273,33 @@ export default defineComponent({
       console.log("removing from database:", arg.event);
     }
 
+    async function fetchEvents(): Promise<void> {
+  try {
+    const response = await fetch('http://localhost:8000/api/bookings/?device_instance=' + deviceId.value);
+    const data = await response.json();
+    console.log('Fetch events Success:', data);
+
+    currentEvents.value = data.map((booking: Booking) => ({
+      title: booking.title,
+      start: booking.datetime_start,
+      end: booking.datetime_end,
+      allDay: false,
+      extendedProps: {
+        description: booking.description,
+      },
+    }));
+    console.log("currentEvents:", currentEvents.value);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
     return {
       ...toRefs(
         reactive({
           fullCalendar,
-          deviceName: props.deviceName,
+          deviceName,
+          deviceId,
           addEventDialog,
           editEventDialog,
           eventDetailDialog,
@@ -270,7 +310,6 @@ export default defineComponent({
           submitAddEvent,
           submitEditEvent,
           deleteEvent,
-          clearCurrentEvent,
           handleDateSelect,
           handleEventClick,
           handleEventDrop,

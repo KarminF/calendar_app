@@ -8,7 +8,7 @@
 import { registerPlugins } from '@/plugins'
 
 // Components
-import NavBar from './components/NavBar.vue'
+import NavBarInstance from './components/NavBarInstance.vue';
 
 // Composables
 import { createApp } from 'vue'
@@ -16,7 +16,7 @@ import { createApp } from 'vue'
 import 'vuetify/dist/vuetify.min.css';
 
 
-const app = createApp(NavBar)
+const app = createApp(NavBarInstance)
 
 registerPlugins(app)
 

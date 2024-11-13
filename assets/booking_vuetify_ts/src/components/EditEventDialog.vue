@@ -84,7 +84,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref, toRefs, watch } from "vue";
+import { defineComponent, PropType, reactive, ref, toRefs, watch } from "vue";
 import { EventInput } from "@fullcalendar/core";
 import { VTimePicker } from "vuetify/labs/VTimePicker";
 
@@ -222,7 +222,8 @@ export default defineComponent({
     );
 
     return {
-      ...toRefs({
+      ...toRefs(
+        reactive({
         localIsOpen,
         debug,
         currentEvent,
@@ -241,7 +242,7 @@ export default defineComponent({
         submitEvent,
         closeDialog,
         deleteEvent,
-      }),
+      })),
     };
   },
   watch: {

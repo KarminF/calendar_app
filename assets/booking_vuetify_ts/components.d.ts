@@ -13,6 +13,7 @@ declare module 'vue' {
     EditEventDialog: typeof import('./src/components/EditEventDialog.vue')['default']
     EventDetailDialog: typeof import('./src/components/EventDetailDialog.vue')['default']
     NavBar: typeof import('./src/components/NavBar.vue')['default']
+    NavBarInstance: typeof import('./src/components/NavBarInstance.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Temp: typeof import('./src/components/Temp.vue')['default']

@@ -10,9 +10,6 @@ class DeviceInstance(models.Model):
     name = models.TextField(blank=True, help_text="short item name")
     model_curi = "lara:material_store/DeviceInstance"
     deviceinstance_id = models.CharField(max_length=100, primary_key=True, default=uuid.uuid4, editable=False)
-    image = models.ImageField(
-        upload_to="material_store/device_instance", blank=True, null=True, help_text="rel. path/filename to image"
-    )
 
 
     def __str__(self):
