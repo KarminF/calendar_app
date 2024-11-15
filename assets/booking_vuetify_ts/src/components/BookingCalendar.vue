@@ -7,9 +7,7 @@
     :event="currentEvent"
     :isOpen="addEventDialog"
     @submit="submitAddEvent"
-    @close="
-      addEventDialog = false;
-    "
+    @close="addEventDialog = false"
   />
 
   <EventDetailDialog
@@ -46,8 +44,8 @@
 </template>
 
 <script lang="ts">
-import { useRoute } from 'vue-router';
-import { defineComponent, ref, reactive, toRefs, onMounted, toRaw } from "vue";
+import { useRoute } from "vue-router";
+import { defineComponent, ref, reactive, toRefs, onMounted } from "vue";
 import FullCalendar from "@fullcalendar/vue3";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -62,30 +60,29 @@ interface CurrentEvent extends EventInput {
 }
 
 interface Booking {
-  title: string,
-  description: string,
-  datetime_start: Date | null,
-  datetime_end: Date | null,
-  user: string | null,
-  device_instance: string,
+  devicebookingcalendar_id: string | null;
+  title: string;
+  description: string;
+  datetime_start: Date | null;
+  datetime_end: Date | null;
+  user: string | null;
+  device_instance: string;
 }
-
-
 
 export default defineComponent({
   props: {
     deviceName: {
       type: String,
       required: true,
-    }
+    },
   },
   components: {
     FullCalendar,
   },
   setup() {
     const route = useRoute();
-    const deviceName = ref(route.query.deviceName || '');
-    const deviceId = ref(route.query.deviceId as string || '');
+    const deviceName = ref(route.query.deviceName || "");
+    const deviceId = ref((route.query.deviceId as string) || "");
     const addEventDialog = ref(false);
     const editEventDialog = ref(false);
     const eventDetailDialog = ref(false);
@@ -139,7 +136,7 @@ export default defineComponent({
       },
       select: handleDateSelect,
       eventClick: handleEventClick,
-      eventsSet: handleEvents,
+      // eventsSet: handleEvents,
       eventAdd: handleEventAdd,
       eventRemove: handleEventRemove,
       eventDrop: handleEventDrop,
@@ -159,6 +156,7 @@ export default defineComponent({
           description: event.desc,
         },
       });
+      location.reload();
     }
 
     function submitEditEvent(newEvent: CurrentEvent): void {
@@ -224,24 +222,36 @@ export default defineComponent({
       return date.slice(0, 10) + " " + date.slice(11, 16);
     }
 
+    function setCurrentEvent(event: EventApi): void {
+      currentEvent.id = event.id;
+      currentEvent.title = event.title;
+      currentEvent.desc = event.extendedProps.description;
+      currentEvent.start = event.start ?? undefined;
+      currentEvent.end = event.end ?? undefined;
+      currentEvent.allDay = event.allDay;
+    }
+
     function handleEventDrop(arg: { event: EventApi }): void {
       console.log("dropped:", arg.event);
+      setCurrentEvent(arg.event);
       handleEventChange(arg.event);
     }
 
     function handleEventResize(arg: { event: EventApi }): void {
       console.log("resized:", arg.event);
+      setCurrentEvent(arg.event);
       handleEventChange(arg.event);
     }
 
-    function handleEvents(events: EventApi[]): void {
-      console.log("handleEvents");
-    }
+    // function handleEvents(events: EventApi[]): void {
+    //   console.log("handleEvents");
+    // }
 
     async function handleEventAdd(arg: { event: EventApi }): Promise<void> {
       console.log("adding to database:", arg.event);
       console.log("currentEvent:", currentEvent);
       const booking: Booking = {
+        devicebookingcalendar_id: null,
         title: arg.event.title,
         description: arg.event.extendedProps.description,
         datetime_start: arg.event.start,
@@ -249,50 +259,97 @@ export default defineComponent({
         user: null, // todo: provide a valid user value
         device_instance: deviceId.value,
       };
-      fetch('http://127.0.0.1:8000/api/bookings/', {
-        method: 'POST',
+      fetch("http://127.0.0.1:8000/api/bookings/", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(booking),
       })
-        .then(response => response.json())
-        .then(data => {
-          console.log('Success:', data);
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("Success:", data);
         })
         .catch((error) => {
-          console.error('Error:', error);
+          console.error("Error:", error);
         });
     }
 
-    function handleEventChange(event: EventApi): void {
+    async function handleEventChange(event: EventApi): Promise<void> {
       console.log("changing in database:", event);
+      const booking: Booking = {
+        devicebookingcalendar_id: event.id,
+        title: event.title,
+        description: event.extendedProps.description,
+        datetime_start: event.start,
+        datetime_end: event.end,
+        user: null, // todo: provide a valid user value
+        device_instance: deviceId.value,
+      };
+      fetch(`http://127.0.0.1:8000/api/bookings/${event.id}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(booking),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("Success:", data);
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
     }
 
     function handleEventRemove(arg: { event: EventApi }): void {
       console.log("removing from database:", arg.event);
+      fetch(`http://127.0.0.1:8000/api/bookings/${arg.event.id}/`, {
+        method: "DELETE",
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.indexOf("application/json") !== -1) {
+            return response.json();
+          } else {
+            return null;
+          }
+        })
+        .then((data) => {
+          console.log("Success:", data);
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
     }
 
     async function fetchEvents(): Promise<void> {
-  try {
-    const response = await fetch('http://localhost:8000/api/bookings/?device_instance=' + deviceId.value);
-    const data = await response.json();
-    console.log('Fetch events Success:', data);
+      try {
+        const response = await fetch(
+          "http://localhost:8000/api/bookings/?device_instance=" +
+            deviceId.value
+        );
+        const data = await response.json();
+        console.log("Fetch events Success:", data);
 
-    currentEvents.value = data.map((booking: Booking) => ({
-      title: booking.title,
-      start: booking.datetime_start,
-      end: booking.datetime_end,
-      allDay: false,
-      extendedProps: {
-        description: booking.description,
-      },
-    }));
-    console.log("currentEvents:", currentEvents.value);
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
+        currentEvents.value = data.map((booking: Booking) => ({
+          id: booking.devicebookingcalendar_id,
+          title: booking.title,
+          start: booking.datetime_start,
+          end: booking.datetime_end,
+          allDay: false,
+          extendedProps: {
+            description: booking.description,
+          },
+        }));
+        console.log("currentEvents:", currentEvents.value);
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
 
     return {
       ...toRefs(
@@ -314,7 +371,7 @@ export default defineComponent({
           handleEventClick,
           handleEventDrop,
           handleEventResize,
-          handleEvents,
+          // handleEvents,
           handleEventAdd,
           handleEventChange,
           handleEventRemove,
